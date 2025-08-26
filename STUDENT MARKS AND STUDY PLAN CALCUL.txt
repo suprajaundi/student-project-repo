@@ -1,0 +1,25 @@
+                                                                 STUDENT MARKS AND STUDY PLAN CALCULATOR
+
+Helps students analyze their marks in different subjects.
+
+Provides personalized study recommendations to improve weaker areas.
+
+
+
+Steps to use the application
+
+Step 1: Enter subjects and marks.
+
+Step 2: Click Calculate to generate results.
+
+Step 3: View total percentage and subject-wise breakdown.
+
+Step 4: Get improvement strategies and study allocation.
+
+
+Benefits
+
+Makes students aware of their strengths and weaknesses.
+Provides a clear, actionable study plan.
+Motivates better time management and focused preparation.
+Easy to use, no complex setup required—just open in a browser.

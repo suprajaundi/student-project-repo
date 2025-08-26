@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marks & Study Plan Calculator</title>
+  <style>
+    body{font-family:sans-serif;background:#0f172a;color:#e5e7eb;margin:0;padding:20px}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:8px;border:1px solid #1f2937;text-align:center}
+    input{padding:6px}
+    .pill{background:#1f2937;padding:5px 10px;margin:2px;border-radius:15px;display:inline-block}
+    .panel{background:#111827;padding:15px;margin-top:15px;border-radius:10px}
+    button{
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
+      color:white;
+      border:none;
+      padding:10px 18px;
+      margin:5px;
+      border-radius:8px;
+      font-size:14px;
+      cursor:pointer;
+      transition:transform 0.2s,box-shadow 0.2s;
+    }
+    button:hover{
+      transform:translateY(-2px);
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    }
+    button:active{
+      transform:translateY(0);
+      box-shadow:none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Marks & Study Plan Calculator</h1>
+  <button id="addRowBtn">➕ Add Subject</button>
+  <button id="sampleBtn">📊 Load Sample Data</button>
+  <button id="calcBtn">✅ Calculate</button>
+  <table>
+    <thead>
+      <tr><th>Subject</th><th>Marks Scored</th><th>Total Marks</th><th>Action</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div id="results" style="display:none">
+    <div class="panel">
+      <h3>Overall Results</h3>
+      <p>Total Scored: <span id="totalScored"></span></p>
+      <p>Total Possible: <span id="totalPossible"></span></p>
+      <p>Overall Percentage: <span id="overallPct"></span>%</p>
+    </div>
+    <div class="panel">
+      <h3>Effort Allocation</h3>
+      <div id="effortPills"></div>
+    </div>
+    <div class="panel">
+      <h3>Per-Subject Breakdown</h3>
+      <div id="breakdown"></div>
+    </div>
+    <div class="panel">
+      <h3>Preparation Recommendations</h3>
+      <ul id="prepRecs"></ul>
+    </div>
+    <div class="panel">
+      <h3>Detailed Preparation Plan</h3>
+      <ul id="detailedPlan"></ul>
+    </div>
+  </div>
+
+  <template id="rowTemplate">
+    <tr>
+      <td><input type="text" placeholder="Subject"/></td>
+      <td><input type="number" placeholder="Marks"/></td>
+      <td><input type="number" placeholder="Total"/></td>
+      <td><button class="delBtn">🗑️ Delete</button></td>
+    </tr>
+  </template>
+
+  <script>
+    const rowsEl=document.getElementById('rows');
+    const addRowBtn=document.getElementById('addRowBtn');
+    const sampleBtn=document.getElementById('sampleBtn');
+    const calcBtn=document.getElementById('calcBtn');
+    const totalScoredEl=document.getElementById('totalScored');
+    const totalPossibleEl=document.getElementById('totalPossible');
+    const overallPctEl=document.getElementById('overallPct');
+    const results=document.getElementById('results');
+    const effortPills=document.getElementById('effortPills');
+    const breakdown=document.getElementById('breakdown');
+    const prepRecs=document.getElementById('prepRecs');
+    const detailedPlan=document.getElementById('detailedPlan');
+
+    function addRow(sub='',scored='',total=''){
+      const tpl=document.getElementById('rowTemplate');
+      const node=tpl.content.cloneNode(true);
+      const inputs=node.querySelectorAll('input');
+      inputs[0].value=sub;inputs[1].value=scored;inputs[2].value=total;
+      node.querySelector('.delBtn').addEventListener('click',e=>e.target.closest('tr').remove());
+      rowsEl.appendChild(node);
+    }
+
+    function getData(){
+      const data=[];
+      rowsEl.querySelectorAll('tr').forEach(tr=>{
+        const [nameI,scoredI,totalI]=tr.querySelectorAll('input');
+        const name=nameI.value.trim()||'Subject';
+        const scored=Number(scoredI.value);const total=Number(totalI.value);
+        if(total>0 && scored>=0){data.push({name,scored,total,pct:(scored/total)*100,left:total-scored});}
+      });
+      return data;
+    }
+
+    function compute(){
+      const items=getData();
+      if(!items.length){alert('Enter valid data');return;}
+      const totalScored=items.reduce((s,i)=>s+i.scored,0);
+      const totalPossible=items.reduce((s,i)=>s+i.total,0);
+      const overallPct=(totalScored/totalPossible)*100;
+      totalScoredEl.textContent=totalScored;
+      totalPossibleEl.textContent=totalPossible;
+      overallPctEl.textContent=overallPct.toFixed(1);
+
+      const totalLeft=items.reduce((s,i)=>s+i.left,0);
+      const plan=items.map(i=>({...i,share:totalLeft?i.left/totalLeft*100:100/items.length}));
+
+      effortPills.innerHTML='';
+      plan.forEach(p=>{
+        const span=document.createElement('span');
+        span.className='pill';
+        span.textContent=`${p.name}: ${p.share.toFixed(1)}%`;
+        effortPills.appendChild(span);
+      });
+
+      breakdown.innerHTML='<table><tr><th>Subject</th><th>Scored</th><th>Total</th><th>%</th><th>Remaining</th><th>Effort %</th></tr>'+plan.map(p=>`<tr><td>${p.name}</td><td>${p.scored}</td><td>${p.total}</td><td>${p.pct.toFixed(1)}</td><td>${p.left}</td><td>${p.share.toFixed(1)}</td></tr>`).join('')+'</table>';
+
+      prepRecs.innerHTML='';
+      detailedPlan.innerHTML='';
+      plan.forEach(p=>{
+        const li=document.createElement('li');
+        if(p.pct<50){li.textContent=`${p.name}: Focus on basics, daily 2 hours of practice, solve simple to medium questions.`;}
+        else if(p.pct<75){li.textContent=`${p.name}: Strengthen weak chapters, 1.5 hours daily, revise notes, attempt past year papers.`;}
+        else{li.textContent=`${p.name}: Revise concepts 1 hour every alternate day, maintain consistency.`;}
+        prepRecs.appendChild(li);
+
+        const detail=document.createElement('li');
+        detail.innerHTML=`<b>${p.name}</b>: Suggested weekly schedule → Theory: ${(p.share*0.4).toFixed(1)}%, Practice: ${(p.share*0.4).toFixed(1)}%, Revision: ${(p.share*0.2).toFixed(1)}%.`;
+        detailedPlan.appendChild(detail);
+      });
+
+      results.style.display='block';
+    }
+
+    addRowBtn.addEventListener('click',()=>addRow());
+    sampleBtn.addEventListener('click',()=>{
+      rowsEl.innerHTML='';
+      [['Mathematics',62,100],['Physics',48,75],['Chemistry',55,75],['English',82,100]].forEach(r=>addRow(...r));
+    });
+    calcBtn.addEventListener('click',compute);
+
+    addRow();
+  </script>
+</body>
+</html>
